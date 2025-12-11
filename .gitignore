@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+*.env
+.vscode/
+
+# Docker
+*.dockerignore
+*.bak
+Dockerfile.bak
+*.log
+!docker/
+
+# Kubernetes/Helm
+.helm/
+*.tgz
+!helm/
+
+# Local storage
+storage/
+
+# macOS
+.DS_Store
+
+# IDEs
+.idea/
+.vscode/
+
+# Build artifacts
+build/
+dist/
+
+# Test/Temporary files
+.pytest_cache/
+.coverage
+htmlcov/
+.nox/
+/tmp/
+
+# Environment variables
+.env
+.flaskenv
+.venv
+
