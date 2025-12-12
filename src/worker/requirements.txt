@@ -1,0 +1,3 @@
+redis
+Pillow
+psutil # For optional metrics

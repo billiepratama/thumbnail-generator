@@ -1,0 +1,5 @@
+fastapi
+uvicorn
+python-multipart # For file uploads
+redis
+Pillow # Used for basic image validation on upload
