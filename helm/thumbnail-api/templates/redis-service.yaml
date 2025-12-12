@@ -1,17 +1,19 @@
 apiVersion: v1
 kind: Service
 metadata:
-  name: {{ include "thumbnail-api.fullname" . }}-redis
+  name: thumbnail-api-release-redis
   labels:
-    {{- include "thumbnail-api.labels" . | nindent 4 }}
+    helm.sh/chart: thumbnail-api
+    app.kubernetes.io/name: thumbnail-api
+    app.kubernetes.io/instance: thumbnail-release
     app.kubernetes.io/component: redis
 spec:
   type: ClusterIP
   ports:
-    - port: {{ .Values.redis.port }}
+    - port: 6379
       targetPort: redis
       protocol: TCP
       name: redis
   selector:
-    {{- include "thumbnail-api.selectorLabels" . | nindent 4 }}
-    app.kubernetes.io/component: redis
+    app.kubernetes.io/name: thumbnail-api
+    app.kubernetes.io/instance: thumbnail-release

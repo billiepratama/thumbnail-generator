@@ -1,50 +1,48 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: {{ include "thumbnail-api.fullname" . }}-worker
+  name: thumbnail-api-release-worker
   labels:
-    {{- include "thumbnail-api.labels" . | nindent 4 }}
+    helm.sh/chart: thumbnail-api
+    app.kubernetes.io/name: thumbnail-api
+    app.kubernetes.io/instance: thumbnail-release
     app.kubernetes.io/component: worker
 spec:
-  replicas: {{ .Values.worker.replicaCount }}
+  replicas: 1
   selector:
     matchLabels:
-      {{- include "thumbnail-api.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: worker
+      app.kubernetes.io/name: thumbnail-api
+      app.kubernetes.io/instance: thumbnail-release
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "thumbnail-api.selectorLabels" . | nindent 8 }}
+        helm.sh/chart: thumbnail-api
+        app.kubernetes.io/name: thumbnail-api
+        app.kubernetes.io/instance: thumbnail-release
         app.kubernetes.io/component: worker
     spec:
-      {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ include "thumbnail-api.serviceAccountName" . }}
-      {{- end }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: worker
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.worker.image }}"
-          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
+          image: "thumbnail-worker:latest"
+          imagePullPolicy: IfNotPresent
           env:
             - name: REDIS_HOST
-              value: "{{ include "thumbnail-api.fullname" . }}-redis"
+              value: "redis"
             - name: REDIS_PORT
-              value: "{{ .Values.redis.port | quote }}"
+              value: "6379"
             - name: IMAGE_STORAGE_PATH
-              value: "{{ .Values.storage.mountPath }}"
+              value: "/app/storage"
+          resources:
+            requests:
+              cpu: "150m"
+              memory: "256Mi"
+            limits:
+              cpu: "500m"
+              memory: "512Mi"
           volumeMounts:
             - name: image-storage
-              mountPath: {{ .Values.storage.mountPath }}
-          resources:
-            {{- toYaml .Values.worker.resources | nindent 12 }}
+              mountPath: /app/storage
       volumes:
         - name: image-storage
           persistentVolumeClaim:
-            claimName: {{ include "thumbnail-api.fullname" . }}-storage
+            claimName: thumbnail-api-release-storage

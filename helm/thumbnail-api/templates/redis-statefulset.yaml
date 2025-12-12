@@ -1,41 +1,42 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: {{ include "thumbnail-api.fullname" . }}-redis
+  name: thumbnail-api-release-redis
   labels:
-    {{- include "thumbnail-api.labels" . | nindent 4 }}
+    helm.sh/chart: thumbnail-api
+    app.kubernetes.io/name: thumbnail-api
+    app.kubernetes.io/instance: thumbnail-release
     app.kubernetes.io/component: redis
 spec:
-  serviceName: {{ include "thumbnail-api.fullname" . }}-redis
-  replicas: {{ .Values.redis.replicaCount }}
+  serviceName: thumbnail-api-release-redis
+  replicas: 1
   selector:
     matchLabels:
-      {{- include "thumbnail-api.selectorLabels" . | nindent 6 }}
-      app.kubernetes.io/component: redis
+      app.kubernetes.io/name: thumbnail-api
+      app.kubernetes.io/instance: thumbnail-release
   template:
     metadata:
-      {{- with .Values.podAnnotations }}
-      annotations:
-        {{- toYaml . | nindent 8 }}
-      {{- end }}
       labels:
-        {{- include "thumbnail-api.selectorLabels" . | nindent 8 }}
+        helm.sh/chart: thumbnail-api
+        app.kubernetes.io/name: thumbnail-api
+        app.kubernetes.io/instance: thumbnail-release
         app.kubernetes.io/component: redis
     spec:
-      {{- if .Values.serviceAccount.create }}
-      serviceAccountName: {{ include "thumbnail-api.serviceAccountName" . }}
-      {{- end }}
-      securityContext:
-        {{- toYaml .Values.podSecurityContext | nindent 8 }}
       containers:
         - name: redis
-          securityContext:
-            {{- toYaml .Values.securityContext | nindent 12 }}
-          image: "{{ .Values.redis.image }}"
-          imagePullPolicy: {{ .Values.redis.imagePullPolicy }}
+          image: "redis:7-alpine"
+          imagePullPolicy: IfNotPresent
           ports:
             - name: redis
-              containerPort: {{ .Values.redis.port }}
+              containerPort: 6379
               protocol: TCP
           resources:
-            {{- toYaml .Values.redis.resources | nindent 12 }}
+            requests:
+              cpu: "50m"
+              memory: "64Mi"
+            limits:
+              cpu: "100m"
+              memory: "128Mi"
+      volumes:
+        - name: data
+          emptyDir: {} # Using emptyDir for simplicity in demo, as persistence not critical here.
