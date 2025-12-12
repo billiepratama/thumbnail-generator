@@ -1,6 +1,6 @@
 # Cogent Labs Thumbnail API Assignment
 
-**Name:** [Your Name Here]
+**Name:** Billie Pratama (bpbilliepratama@gmail.com)
 
 This repository contains the solution for the Cogent Labs Platform Infrastructure Engineer Assignment: a Thumbnail API with Kubernetes deployment.
 
