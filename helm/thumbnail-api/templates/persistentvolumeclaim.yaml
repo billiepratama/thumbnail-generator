@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ include "thumbnail-api.fullname" . }}-storage
+  labels:
+    {{- include "thumbnail-api.labels" . | nindent 4 }}
+spec:
+  accessModes:
+    - ReadWriteOnce # This is suitable for single-node Kind deployments
+  resources:
+    requests:
+      storage: {{ .Values.storage.size }}
+  {{- if .Values.storage.storageClassName }}
+  storageClassName: {{ .Values.storage.storageClassName }}
+  {{- end }}

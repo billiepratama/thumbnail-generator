@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "thumbnail-api.fullname" . }}-redis
+  labels:
+    {{- include "thumbnail-api.labels" . | nindent 4 }}
+    app.kubernetes.io/component: redis
+spec:
+  type: ClusterIP
+  ports:
+    - port: {{ .Values.redis.port }}
+      targetPort: redis
+      protocol: TCP
+      name: redis
+  selector:
+    {{- include "thumbnail-api.selectorLabels" . | nindent 4 }}
+    app.kubernetes.io/component: redis

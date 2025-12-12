@@ -1,0 +1,50 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "thumbnail-api.fullname" . }}-worker
+  labels:
+    {{- include "thumbnail-api.labels" . | nindent 4 }}
+    app.kubernetes.io/component: worker
+spec:
+  replicas: {{ .Values.worker.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "thumbnail-api.selectorLabels" . | nindent 6 }}
+      app.kubernetes.io/component: worker
+  template:
+    metadata:
+      {{- with .Values.podAnnotations }}
+      annotations:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      labels:
+        {{- include "thumbnail-api.selectorLabels" . | nindent 8 }}
+        app.kubernetes.io/component: worker
+    spec:
+      {{- if .Values.serviceAccount.create }}
+      serviceAccountName: {{ include "thumbnail-api.serviceAccountName" . }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      containers:
+        - name: worker
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          image: "{{ .Values.worker.image }}"
+          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
+          env:
+            - name: REDIS_HOST
+              value: "{{ include "thumbnail-api.fullname" . }}-redis"
+            - name: REDIS_PORT
+              value: "{{ .Values.redis.port | quote }}"
+            - name: IMAGE_STORAGE_PATH
+              value: "{{ .Values.storage.mountPath }}"
+          volumeMounts:
+            - name: image-storage
+              mountPath: {{ .Values.storage.mountPath }}
+          resources:
+            {{- toYaml .Values.worker.resources | nindent 12 }}
+      volumes:
+        - name: image-storage
+          persistentVolumeClaim:
+            claimName: {{ include "thumbnail-api.fullname" . }}-storage
