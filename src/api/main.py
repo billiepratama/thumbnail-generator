@@ -15,13 +15,16 @@ import redis
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 # Environment variables for Redis connection
-REDIS_HOST = os.getenv('REDIS_HOST', 'redis')
+REDIS_HOST = os.getenv('REDIS_HOST', 'thumbnail-api-release-redis') # Corrected Redis service name
 REDIS_PORT = int(os.getenv('REDIS_PORT', 6379))
 REDIS_DB = int(os.getenv('REDIS_DB', 0))
 JOB_QUEUE = os.getenv('JOB_QUEUE', 'thumbnail_jobs')
 
 # Directory for storing images (should be a mounted volume)
 IMAGE_STORAGE_PATH = os.getenv('IMAGE_STORAGE_PATH', '/app/storage')
+
+# Thumbnail size
+THUMBNAIL_SIZE = (100, 100)
 
 app = FastAPI(
     title="Thumbnail API",
@@ -50,6 +53,7 @@ def get_redis_client():
         return r
     except redis.exceptions.ConnectionError as e:
         logging.error(f"Could not connect to Redis: {e}")
+        # In production, might want a more robust retry strategy or separate health check
         raise HTTPException(
             status_code=status.HTTP_503_SERVICE_UNAVAILABLE,
             detail="Could not connect to Redis service."
@@ -85,33 +89,18 @@ async def submit_image_for_thumbnail(image: UploadFile = File(...)):
 
     logging.info(f"Received image for job {job_id}. Original filename: {image.filename}")
 
-    # Validate image using PIL
+    # Save image directly to storage without validation for now
     try:
-        # Save to a temporary location first for validation
-        temp_file_path = f"/tmp/{uuid.uuid4()}_{image.filename}"
-        with open(temp_file_path, "wb") as buffer:
+        with open(original_file_path, "wb") as buffer:
             await image.seek(0) # Ensure file pointer is at beginning
             buffer.write(await image.read())
-        
-        # Open and close with PIL to validate
-        with Image.open(temp_file_path) as img:
-            img.verify() # Verify if it's a valid image
-        
-        # If valid, move to permanent storage
-        os.rename(temp_file_path, original_file_path)
-        logging.info(f"Image {original_filename} validated and saved to {original_file_path}")
+        logging.info(f"Image {original_filename} saved to {original_file_path}")
     except Exception as e:
-        logging.error(f"Invalid image file submitted for job {job_id}: {e}", exc_info=True)
-        # Clean up temp file if it exists
-        if os.path.exists(temp_file_path):
-            os.remove(temp_file_path)
+        logging.error(f"Failed to save image for job {job_id}: {e}", exc_info=True)
         raise HTTPException(
-            status_code=status.HTTP_400_BAD_REQUEST,
-            detail=f"Invalid image file: {e}"
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to save image: {e}"
         )
-    finally:
-        # Ensure the original file is reset if needed for further processing (not in this case)
-        await image.seek(0)
 
     # Create job data
     job_data = {
@@ -202,4 +191,3 @@ async def get_thumbnail(job_id: str):
             status_code=status.HTTP_409_CONFLICT,
             detail=f"Job {job_id} is currently {job_data['status']}. Thumbnail not yet available."
         )
-
