@@ -23,15 +23,16 @@ spec:
     spec:
       containers:
         - name: api
-          image: "thumbnail-api:latest"
-          imagePullPolicy: IfNotPresent
-          ports:
-            - name: http
-              containerPort: 8000
-              protocol: TCP
-          env:
-            - name: REDIS_HOST
-              value: "thumbnail-api-release-redis"
+          command:
+            - uvicorn
+          args:
+            - main:app
+            - --host
+            - 0.0.0.0
+            - --port
+            - "8000"
+            - --log-level
+            - debug
             - name: REDIS_PORT
               value: "6379"
             - name: IMAGE_STORAGE_PATH
