@@ -89,7 +89,7 @@ async def submit_image_for_thumbnail(image: UploadFile = File(...)):
 
     logging.info(f"Received image for job {job_id}. Original filename: {image.filename}")
 
-    # Save image directly to storage without validation for now
+    # Save image directly to storage path without validation for now
     try:
         with open(original_file_path, "wb") as buffer:
             await image.seek(0) # Ensure file pointer is at beginning
