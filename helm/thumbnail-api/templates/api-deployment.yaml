@@ -22,7 +22,10 @@ spec:
         app.kubernetes.io/component: api
     spec:
       containers:
+      containers:
         - name: api
+          image: "thumbnail-api:latest"
+          imagePullPolicy: IfNotPresent
           command:
             - uvicorn
           args:
@@ -33,6 +36,13 @@ spec:
             - "8000"
             - --log-level
             - debug
+          ports:
+            - name: http
+              containerPort: 8000
+              protocol: TCP
+          env:
+            - name: REDIS_HOST
+              value: "thumbnail-api-release-redis"
             - name: REDIS_PORT
               value: "6379"
             - name: IMAGE_STORAGE_PATH
