@@ -1,14 +1,11 @@
 import os
-import time
 import json
 import logging
 import uuid
-from typing import List, Optional
 from datetime import datetime
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, status
 from fastapi.responses import JSONResponse, FileResponse
-from PIL import Image
 import redis
 
 # Configure logging
@@ -22,9 +19,6 @@ JOB_QUEUE = os.getenv('JOB_QUEUE', 'thumbnail_jobs')
 
 # Directory for storing images (should be a mounted volume)
 IMAGE_STORAGE_PATH = os.getenv('IMAGE_STORAGE_PATH', '/app/storage')
-
-# Thumbnail size
-THUMBNAIL_SIZE = (100, 100)
 
 app = FastAPI(
     title="Thumbnail API",

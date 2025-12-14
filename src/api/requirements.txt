@@ -1,5 +1,4 @@
 fastapi
 uvicorn
-python-multipart # For file uploads
+python-multipart
 redis
-Pillow # Used for basic image validation on upload
