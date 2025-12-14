@@ -22,7 +22,6 @@ spec:
         app.kubernetes.io/component: api
     spec:
       containers:
-      containers:
         - name: api
           image: "thumbnail-api:latest"
           imagePullPolicy: IfNotPresent
