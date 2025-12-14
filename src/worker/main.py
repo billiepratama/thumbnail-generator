@@ -93,7 +93,7 @@ def main():
             item = redis_client.blpop(INPUT_QUEUE, timeout=0) # 0 means block indefinitely
             if item:
                 queue_name, job_id = item
-                logging.debug(f"Received job_id: {job_id} from queue: {queue_name}")
+                logging.info(f"Received job_id: {job_id} from queue: {queue_name}")
                 process_image_job(job_id, redis_client)
         except redis.exceptions.ConnectionError:
             logging.error("Lost connection to Redis. Attempting to reconnect...")
