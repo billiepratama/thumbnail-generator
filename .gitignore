@@ -46,6 +46,3 @@ htmlcov/
 .env
 .flaskenv
 .venv
-
-# README file (temporary)
-README.md
