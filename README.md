@@ -145,6 +145,24 @@ helm uninstall thumbnail-api-release
 kind delete cluster --name thumbnail-cluster
 ```
 
+### Debugging
+
+When you need to troubleshoot issues or collect system information for sharing with others:
+
+```bash
+# Run the diagnostics collection script
+./scripts/collect-diagnostics.sh
+```
+
+This script collects comprehensive information about your deployment including:
+- Pod status and logs
+- Service configurations
+- Redis metrics (queue depth, memory usage)
+- Kubernetes events and warnings
+- Resource usage
+
+The script generates a compressed file (e.g., `diagnostics-20231215-103045.tar.gz`) that you can share with others for debugging. The file contains all relevant information organized into separate text files for easy review.
+
 ---
 
 ## Technical Choices & Reasoning
