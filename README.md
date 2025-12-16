@@ -435,3 +435,49 @@ url = s3_client.generate_presigned_url('get_object',
     Params={'Bucket': 'thumbnails-bucket', 'Key': f'{job_id}_thumbnail.png'},
     ExpiresIn=3600)
 ```
+
+### 4. Monitoring & Observability System
+
+#### Prometheus for Metrics Collection
+
+**Purpose:** Collects and stores time-series metrics from all services
+
+**Key Metrics to Track:**
+- **API Service:** Request rate, latency (p50/p95/p99), error rate, jobs queued per minute
+- **Worker Service:** Jobs processed, processing duration, success/failure rate, queue lag
+- **Redis:** Queue depth, memory usage, connections, operations per second
+- **System:** CPU/memory usage per pod, pod restarts, storage utilization
+
+#### Grafana for Visualization
+
+**Purpose:** Creates dashboards to visualize metrics collected by Prometheus
+
+**Features:**
+- Real-time dashboards showing system overview
+- Custom dashboards for application-specific metrics
+- Historical data analysis and trend identification
+- Visual alerts when thresholds are breached
+
+**Dashboard Examples:**
+- System overview (CPU, memory, pod status)
+- API performance (request rates, latency percentiles)
+- Worker performance (throughput, processing time)
+- Redis metrics (queue depth trends, memory usage)
+
+#### AlertManager for Alerting
+
+**Purpose:** Sends notifications when metrics exceed defined thresholds
+
+**Notification Channels:**
+- Email
+- Slack
+- PagerDuty
+- Webhook integrations
+
+#### Implementation Benefits
+
+- **Proactive issue detection:** Alerts before users are impacted
+- **Performance optimization:** Identify bottlenecks through metrics analysis
+- **Capacity planning:** Track growth trends for resource planning
+- **Debugging:** Historical data helps diagnose past incidents
+- **SLA tracking:** Monitor uptime and performance against targets
