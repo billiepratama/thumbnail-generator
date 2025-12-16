@@ -1,30 +1,30 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: thumbnail-api-release-api
+  name: {{ .Release.Name }}-api
   labels:
-    helm.sh/chart: thumbnail-api
-    app.kubernetes.io/name: thumbnail-api
-    app.kubernetes.io/instance: thumbnail-release
+    helm.sh/chart: {{ .Chart.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: api
 spec:
-  replicas: 1
+  replicas: {{ .Values.api.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: thumbnail-api
-      app.kubernetes.io/instance: thumbnail-release
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        helm.sh/chart: thumbnail-api
-        app.kubernetes.io/name: thumbnail-api
-        app.kubernetes.io/instance: thumbnail-release
+        helm.sh/chart: {{ .Chart.Name }}
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: api
     spec:
       containers:
         - name: api
-          image: "thumbnail-api:latest"
-          imagePullPolicy: IfNotPresent
+          image: {{ .Values.api.image }}
+          imagePullPolicy: {{ .Values.api.imagePullPolicy }}
           command:
             - uvicorn
           args:
@@ -32,31 +32,26 @@ spec:
             - --host
             - 0.0.0.0
             - --port
-            - "8000"
+            - "{{ .Values.api.port }}"
             - --log-level
             - debug
           ports:
             - name: http
-              containerPort: 8000
+              containerPort: {{ .Values.api.port }}
               protocol: TCP
           env:
             - name: REDIS_HOST
-              value: "thumbnail-api-release-redis"
+              value: "{{ .Release.Name }}-redis"
             - name: REDIS_PORT
-              value: "6379"
+              value: "{{ .Values.redis.port }}"
             - name: IMAGE_STORAGE_PATH
-              value: "/app/storage"
+              value: "{{ .Values.storage.mountPath }}"
           resources:
-            requests:
-              cpu: "100m"
-              memory: "128Mi"
-            limits:
-              cpu: "250m"
-              memory: "256Mi"
+            {{- toYaml .Values.api.resources | nindent 12 }}
           volumeMounts:
             - name: image-storage
-              mountPath: /app/storage
+              mountPath: {{ .Values.storage.mountPath }}
       volumes:
         - name: image-storage
           persistentVolumeClaim:
-            claimName: thumbnail-api-release-storage
+            claimName: {{ .Release.Name }}-storage

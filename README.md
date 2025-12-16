@@ -417,10 +417,3 @@ url = s3_client.generate_presigned_url('get_object',
     Params={'Bucket': 'thumbnails-bucket', 'Key': f'{job_id}_thumbnail.png'},
     ExpiresIn=3600)
 ```
-
-#### CDN for Thumbnails
-```python
-# Serve thumbnails via CDN (CloudFront, Cloudflare)
-# Cache thumbnails at edge locations
-# Reduce load on API service
-```

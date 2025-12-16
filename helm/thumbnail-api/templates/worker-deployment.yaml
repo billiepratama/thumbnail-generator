@@ -1,48 +1,43 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: thumbnail-api-release-worker
+  name: {{ .Release.Name }}-worker
   labels:
-    helm.sh/chart: thumbnail-api
-    app.kubernetes.io/name: thumbnail-api
-    app.kubernetes.io/instance: thumbnail-release
+    helm.sh/chart: {{ .Chart.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: worker
 spec:
-  replicas: 1
+  replicas: {{ .Values.worker.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: thumbnail-api
-      app.kubernetes.io/instance: thumbnail-release
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        helm.sh/chart: thumbnail-api
-        app.kubernetes.io/name: thumbnail-api
-        app.kubernetes.io/instance: thumbnail-release
+        helm.sh/chart: {{ .Chart.Name }}
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: worker
     spec:
       containers:
         - name: worker
-          image: "thumbnail-worker:latest"
-          imagePullPolicy: IfNotPresent
+          image: {{ .Values.worker.image }}
+          imagePullPolicy: {{ .Values.worker.imagePullPolicy }}
           env:
             - name: REDIS_HOST
-              value: "thumbnail-api-release-redis"
+              value: "{{ .Release.Name }}-redis"
             - name: REDIS_PORT
-              value: "6379"
+              value: "{{ .Values.redis.port }}"
             - name: IMAGE_STORAGE_PATH
-              value: "/app/storage"
+              value: "{{ .Values.storage.mountPath }}"
           resources:
-            requests:
-              cpu: "150m"
-              memory: "256Mi"
-            limits:
-              cpu: "500m"
-              memory: "512Mi"
+            {{- toYaml .Values.worker.resources | nindent 12 }}
           volumeMounts:
             - name: image-storage
-              mountPath: /app/storage
+              mountPath: {{ .Values.storage.mountPath }}
       volumes:
         - name: image-storage
           persistentVolumeClaim:
-            claimName: thumbnail-api-release-storage
+            claimName: {{ .Release.Name }}-storage

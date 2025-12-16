@@ -1,42 +1,37 @@
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
-  name: thumbnail-api-release-redis
+  name: {{ .Release.Name }}-redis
   labels:
-    helm.sh/chart: thumbnail-api
-    app.kubernetes.io/name: thumbnail-api
-    app.kubernetes.io/instance: thumbnail-release
+    helm.sh/chart: {{ .Chart.Name }}
+    app.kubernetes.io/name: {{ .Chart.Name }}
+    app.kubernetes.io/instance: {{ .Release.Name }}
     app.kubernetes.io/component: redis
 spec:
-  serviceName: thumbnail-api-release-redis
-  replicas: 1
+  serviceName: {{ .Release.Name }}-redis
+  replicas: {{ .Values.redis.replicaCount }}
   selector:
     matchLabels:
-      app.kubernetes.io/name: thumbnail-api
-      app.kubernetes.io/instance: thumbnail-release
+      app.kubernetes.io/name: {{ .Chart.Name }}
+      app.kubernetes.io/instance: {{ .Release.Name }}
   template:
     metadata:
       labels:
-        helm.sh/chart: thumbnail-api
-        app.kubernetes.io/name: thumbnail-api
-        app.kubernetes.io/instance: thumbnail-release
+        helm.sh/chart: {{ .Chart.Name }}
+        app.kubernetes.io/name: {{ .Chart.Name }}
+        app.kubernetes.io/instance: {{ .Release.Name }}
         app.kubernetes.io/component: redis
     spec:
       containers:
         - name: redis
-          image: "redis:7-alpine"
-          imagePullPolicy: IfNotPresent
+          image: {{ .Values.redis.image }}
+          imagePullPolicy: {{ .Values.redis.imagePullPolicy }}
           ports:
             - name: redis
-              containerPort: 6379
+              containerPort: {{ .Values.redis.port }}
               protocol: TCP
           resources:
-            requests:
-              cpu: "50m"
-              memory: "64Mi"
-            limits:
-              cpu: "100m"
-              memory: "128Mi"
+            {{- toYaml .Values.redis.resources | nindent 12 }}
       volumes:
         - name: data
-          emptyDir: {} # Using emptyDir for simplicity in demo, as persistence not critical here.
+          emptyDir: {}
