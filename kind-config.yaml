@@ -1,0 +1,9 @@
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: thumbnail-cluster
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30080  # NodePort inside the Kind node
+    hostPort: 8080        # Port on your computer (localhost)
+    protocol: TCP

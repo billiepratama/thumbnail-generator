@@ -71,7 +71,22 @@ docker build -f docker/worker.Dockerfile -t thumbnail-worker:latest .
 #### 2. Create Kind Cluster
 
 ```bash
-kind create cluster --name thumbnail-cluster
+# Create cluster with port mapping configuration
+kind create cluster --config kind-config.yaml
+```
+
+The `kind-config.yaml` configures port mapping so you can access the API at `localhost:8080` without manual port-forwarding:
+
+```yaml
+kind: Cluster
+apiVersion: kind.x-k8s.io/v1alpha4
+name: thumbnail-cluster
+nodes:
+- role: control-plane
+  extraPortMappings:
+  - containerPort: 30080  # NodePort inside Kind
+    hostPort: 8080        # Port on your machine
+    protocol: TCP
 ```
 
 #### 3. Load Images into Kind
@@ -97,32 +112,27 @@ kubectl get services
 # Should show: thumbnail-api-release-api and thumbnail-api-release-redis
 ```
 
-#### 6. Access the API
+#### 6. Test the Application
 
-```bash
-# Port-forward the API service
-kubectl port-forward svc/thumbnail-api-release-api 8000:8000
-```
-
-#### 7. Test the Application
+The API is accessible at `http://localhost:8080` (no port-forwarding needed):
 
 ```bash
 # Health check
-curl http://localhost:8000/health
+curl http://localhost:8080/health
 
 # Upload image
-curl -X POST http://localhost:8000/jobs -F "image=@test_image.jpg"
+curl -X POST http://localhost:8080/jobs -F "image=@test_image.jpg"
 # Returns: {"job_id": "abc-123...", "status": "queued"}
 
 # Check job status
-curl http://localhost:8000/jobs/abc-123...
+curl http://localhost:8080/jobs/abc-123...
 # Returns: {"job_id": "abc-123...", "status": "succeeded", ...}
 
 # Download thumbnail
-curl http://localhost:8000/jobs/abc-123.../thumbnail -o thumbnail.png
+curl http://localhost:8080/jobs/abc-123.../thumbnail -o thumbnail.png
 
 # List all jobs
-curl http://localhost:8000/jobs
+curl http://localhost:8080/jobs
 ```
 
 ### Cleanup
