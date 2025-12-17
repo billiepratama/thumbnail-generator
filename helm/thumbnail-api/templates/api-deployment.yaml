@@ -34,7 +34,7 @@ spec:
             - --port
             - "{{ .Values.api.port }}"
             - --log-level
-            - debug
+            - "{{ .Values.api.logLevel }}"
           ports:
             - name: http
               containerPort: {{ .Values.api.port }}

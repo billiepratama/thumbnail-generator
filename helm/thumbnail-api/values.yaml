@@ -3,6 +3,7 @@ api:
   image: "thumbnail-api:latest" # Local image tag
   imagePullPolicy: IfNotPresent # Use IfNotPresent for local kind clusters
   port: 8000
+  logLevel: "info" # Options: debug, info, warning, error, critical
   resources:
     requests:
       cpu: "100m"
