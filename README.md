@@ -61,7 +61,7 @@ A microservices-based application that generates thumbnails from uploaded images
 
 ```bash
 # Clone repository
-cd /path/to/personal-learning
+cd /path/to/thumbnail-generator
 
 # Build images
 docker build -f docker/api.Dockerfile -t thumbnail-api:latest .
