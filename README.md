@@ -61,7 +61,7 @@ A microservices-based application that generates thumbnails from uploaded images
 
 ```bash
 # Clone repository
-cd /path/to/thumbnail-generator
+cd /path/to/personal-learning
 
 # Build images
 docker build -f docker/api.Dockerfile -t thumbnail-api:latest .
@@ -244,77 +244,54 @@ The script generates a compressed file (e.g., `diagnostics-20231215-103045.tar.g
 
 ### What's Missing / Trade-offs Made
 
-#### 1. No Input Validation
-**Current:** API accepts any file without validation
-**Trade-off:** Simpler code, but invalid files cause worker failures
-**Why:** Focus on core functionality for learning purposes
-**Impact:** Worker marks jobs as failed, but wastes processing time
+#### 1. No Authentication/Authorization
 
-#### 2. No Authentication/Authorization
-**Current:** Anyone can upload images and access all jobs
-**Trade-off:** Public API without access control
-**Why:** Out of scope for local development/learning
-**Impact:** Not suitable for production use
+- **Current:** Anyone can upload images and access all jobs
+- **Trade-off:** Public API without access control
+- **Why:** Out of scope for local development/learning
+- **Impact:** Not suitable for production use
 
-#### 3. No Rate Limiting
-**Current:** No limits on upload frequency or size
-**Trade-off:** Vulnerable to abuse
-**Why:** Simplifies implementation
-**Impact:** Could be overwhelmed by rapid uploads
+#### 2. No Rate Limiting
 
-#### 4. Files Never Deleted
-**Current:** Original images and thumbnails persist forever
-**Trade-off:** Storage grows unbounded
-**Why:** No cleanup logic implemented
-**Impact:** Disk will eventually fill up
+- **Current:** No limits on upload frequency or size
+- **Trade-off:** Vulnerable to abuse
+- **Why:** Simplifies implementation
+- **Impact:** Could be overwhelmed by rapid uploads
 
-#### 5. No Job Retry Logic
-**Current:** Failed jobs stay failed
-**Trade-off:** Transient errors not recoverable
-**Why:** Adds complexity
-**Impact:** Network glitches or temporary issues cause permanent failures
+#### 3. Files Never Deleted
 
-#### 6. No Multi-Region Support
-**Current:** Single-cluster deployment
-**Trade-off:** No geographic distribution
-**Why:** Learning environment
-**Impact:** Higher latency for distant users
+- **Current:** Original images and thumbnails persist forever
+- **Trade-off:** Storage grows unbounded
+- **Why:** No cleanup logic implemented
+- **Impact:** Disk will eventually fill up
+
+#### 4. No Job Retry Logic
+
+- **Current:** Failed jobs stay failed
+- **Trade-off:** Transient errors not recoverable
+- **Why:** Adds complexity
+- **Impact:** Network glitches or temporary issues cause permanent failures
+
+#### 5. No Multi-Region Support
+
+- **Current:** Single-cluster deployment
+- **Trade-off:** No geographic distribution
+- **Why:** Learning environment
+- **Impact:** Higher latency for distant users
 
 ### What I'd Do Differently With More Time
 
-#### 1. Add Input Validation
-```python
-# Validate file type and size before saving
-MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
-ALLOWED_TYPES = {"image/jpeg", "image/png", "image/gif"}
+#### 1. Implement Cleanup Job
 
-if image.content_type not in ALLOWED_TYPES:
-    raise HTTPException(400, "Invalid file type")
-if image.size > MAX_FILE_SIZE:
-    raise HTTPException(413, "File too large")
-```
+Create a Kubernetes CronJob to automatically delete old job records and files after a retention period (e.g., 7 days), preventing unbounded storage growth.
 
-#### 2. Implement Cleanup Job
-```python
-# Kubernetes CronJob to delete old files
-# Delete jobs older than 7 days
-# Delete orphaned files
-```
+#### 2. Add Retry Logic
 
-#### 3. Add Retry Logic
-```python
-# Store retry count in job metadata
-# Move failed jobs to retry queue
-# Exponential backoff (1s, 2s, 4s, 8s)
-```
+Implement automatic retry mechanism for failed jobs with exponential backoff, allowing recovery from transient errors like temporary network issues or resource unavailability.
 
-#### 4. Use Object Storage
-```python
-# Replace PVC with S3/MinIO
-# Better for scaling
-# Automatic redundancy
-# No shared filesystem issues
-```
+#### 3. Use Object Storage
+
+Replace PersistentVolumeClaim with object storage (S3, MinIO, or GCS) for better scalability, automatic redundancy, and elimination of shared filesystem limitations.
 
 ---
 
@@ -323,120 +300,32 @@ if image.size > MAX_FILE_SIZE:
 ### 1. Security
 
 #### Authentication & Authorization
-```yaml
-# Add API authentication
-- Implement API keys or OAuth2
-- JWT tokens for stateless auth
-- Role-based access control (RBAC)
-```
+
+Implement API authentication using API keys, OAuth2, or JWT tokens. Add role-based access control (RBAC) to manage user permissions and restrict access to sensitive operations.
 
 #### Input Validation
-```python
-# Validate and sanitize inputs
-- Check file signatures (magic bytes), not just extensions
-- Limit file sizes
-- Scan for malware/malicious images
-- Rate limit per user/IP
-```
+
+The application includes basic file type validation. For production, enhance with malware scanning, stricter file signature validation, and implement rate limiting per user or IP address to prevent abuse.
 
 #### Secrets Management
-```yaml
-# Don't hardcode credentials
-# Use Kubernetes Secrets or external secret stores
-- Redis password
-- Object storage credentials
-- API keys
 
-# Example:
-env:
-  - name: REDIS_PASSWORD
-    valueFrom:
-      secretKeyRef:
-        name: redis-secret
-        key: password
-```
+Use Kubernetes Secrets or external secret stores (HashiCorp Vault, AWS Secrets Manager) to manage sensitive credentials like Redis passwords, object storage credentials, and API keys instead of hardcoding them.
 
-### 2. Reliability
-
-#### Health Checks
-```yaml
-# Add liveness and readiness probes
-livenessProbe:
-  httpGet:
-    path: /health
-    port: 8000
-  initialDelaySeconds: 10
-  periodSeconds: 30
-
-readinessProbe:
-  httpGet:
-    path: /ready
-    port: 8000
-  initialDelaySeconds: 5
-  periodSeconds: 10
-```
-
-### 3. Scalability
+### 2. Scalability
 
 #### Horizontal Pod Autoscaling
-```yaml
-apiVersion: autoscaling/v2
-kind: HorizontalPodAutoscaler
-metadata:
-  name: worker-hpa
-spec:
-  scaleTargetRef:
-    apiVersion: apps/v1
-    kind: Deployment
-    name: worker
-  minReplicas: 2
-  maxReplicas: 10
-  metrics:
-  - type: External
-    external:
-      metric:
-        name: redis_queue_depth
-      target:
-        type: Value
-        value: "100"
-```
+
+Configure HorizontalPodAutoscaler to automatically scale worker pods based on Redis queue depth or CPU utilization. This ensures the system can handle variable workloads efficiently by adding or removing worker instances as needed.
 
 #### Redis Clustering
-```yaml
-# Scale Redis for higher throughput
-# Use Redis Cluster or Redis Sentinel
-# Or managed service (AWS ElastiCache, Redis Cloud)
 
-# For learning: Redis Sentinel for HA
-apiVersion: apps/v1
-kind: StatefulSet
-metadata:
-  name: redis-sentinel
-spec:
-  replicas: 3
-  # ... sentinel configuration
-```
+For high-throughput production workloads, replace single Redis instance with Redis Cluster or Redis Sentinel for high availability. Alternatively, use managed services like AWS ElastiCache or Redis Cloud for simplified operations.
 
 #### Object Storage
-```python
-# Replace PVC with S3/MinIO/GCS
-import boto3
 
-s3_client = boto3.client('s3')
+Replace PersistentVolumeClaim with cloud object storage (S3, MinIO, GCS) for better scalability and redundancy. Store original images and thumbnails in buckets and serve them via pre-signed URLs for secure, direct access.
 
-# Save original
-s3_client.upload_fileobj(image.file, 'thumbnails-bucket', f'{job_id}_original.jpg')
-
-# Save thumbnail
-s3_client.upload_file(thumbnail_path, 'thumbnails-bucket', f'{job_id}_thumbnail.png')
-
-# Serve via signed URLs
-url = s3_client.generate_presigned_url('get_object',
-    Params={'Bucket': 'thumbnails-bucket', 'Key': f'{job_id}_thumbnail.png'},
-    ExpiresIn=3600)
-```
-
-### 4. Monitoring & Observability System
+### 3. Monitoring & Observability System
 
 #### Prometheus for Metrics Collection
 
