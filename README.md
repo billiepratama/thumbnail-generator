@@ -77,18 +77,6 @@ kind create cluster --config kind-config.yaml
 
 The `kind-config.yaml` configures port mapping so you can access the API at `localhost:8080` without manual port-forwarding:
 
-```yaml
-kind: Cluster
-apiVersion: kind.x-k8s.io/v1alpha4
-name: thumbnail-cluster
-nodes:
-- role: control-plane
-  extraPortMappings:
-  - containerPort: 30080  # NodePort inside Kind
-    hostPort: 8080        # Port on your machine
-    protocol: TCP
-```
-
 #### 3. Load Images into Kind
 
 ```bash
