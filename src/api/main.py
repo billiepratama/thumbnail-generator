@@ -2,6 +2,7 @@ import os
 import json
 import logging
 import uuid
+import imghdr
 from datetime import datetime
 
 from fastapi import FastAPI, File, UploadFile, HTTPException, status
@@ -19,6 +20,10 @@ JOB_QUEUE = os.getenv('JOB_QUEUE', 'thumbnail_jobs')
 
 # Directory for storing images (should be a mounted volume)
 IMAGE_STORAGE_PATH = os.getenv('IMAGE_STORAGE_PATH', '/app/storage')
+
+# Allowed image types
+ALLOWED_IMAGE_TYPES = {'jpeg', 'png', 'gif', 'bmp', 'webp', 'tiff'}
+MAX_FILE_SIZE = 10 * 1024 * 1024  # 10MB
 
 app = FastAPI(
     title="Thumbnail API",
@@ -69,6 +74,50 @@ async def health_check():
             detail=f"Health check failed: {e}"
         )
 
+def validate_image_file(file_content: bytes, filename: str) -> None:
+    """
+    Validates that the uploaded file is a valid image.
+    Checks file size, MIME type, and magic bytes.
+
+    Args:
+        file_content: The file content as bytes
+        filename: The original filename
+
+    Raises:
+        HTTPException: If validation fails
+    """
+    # Check file size
+    if len(file_content) > MAX_FILE_SIZE:
+        raise HTTPException(
+            status_code=status.HTTP_413_REQUEST_ENTITY_TOO_LARGE,
+            detail=f"File size exceeds maximum allowed size of {MAX_FILE_SIZE / 1024 / 1024}MB"
+        )
+
+    # Check if file is empty
+    if len(file_content) == 0:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Uploaded file is empty"
+        )
+
+    # Validate image type by checking magic bytes (file signature)
+    image_type = imghdr.what(None, h=file_content)
+
+    if image_type is None:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="File is not a valid image. Only image files are accepted."
+        )
+
+    if image_type not in ALLOWED_IMAGE_TYPES:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=f"Image type '{image_type}' is not supported. Allowed types: {', '.join(ALLOWED_IMAGE_TYPES)}"
+        )
+
+    logging.info(f"File validation passed: type={image_type}, size={len(file_content)} bytes")
+
+
 @app.post("/jobs", status_code=status.HTTP_202_ACCEPTED)
 async def submit_image_for_thumbnail(image: UploadFile = File(...)):
     """
@@ -76,19 +125,30 @@ async def submit_image_for_thumbnail(image: UploadFile = File(...)):
     Returns a job ID to track the process.
     """
     job_id = str(uuid.uuid4())
-    original_filename = f"{job_id}_original_{image.filename}"
-    thumbnail_filename = f"{job_id}_thumbnail.png" # Standardize to PNG for thumbnails
+
+    # Use only server-generated filename to prevent path traversal
+    original_filename = f"{job_id}_original.jpg"
+    thumbnail_filename = f"{job_id}_thumbnail.png"
 
     original_file_path = os.path.join(IMAGE_STORAGE_PATH, original_filename)
 
     logging.info(f"Received image for job {job_id}. Original filename: {image.filename}")
 
-    # Save image directly to storage path without validation for now
+    # Read and validate file content
     try:
+        await image.seek(0)
+        file_content = await image.read()
+
+        # Validate the image file
+        validate_image_file(file_content, image.filename)
+
+        # Save validated image to storage
         with open(original_file_path, "wb") as buffer:
-            await image.seek(0) # Ensure file pointer is at beginning
-            buffer.write(await image.read())
+            buffer.write(file_content)
         logging.info(f"Image {original_filename} saved to {original_file_path}")
+    except HTTPException:
+        # Re-raise validation errors
+        raise
     except Exception as e:
         logging.error(f"Failed to save image for job {job_id}: {e}", exc_info=True)
         raise HTTPException(
