@@ -1,0 +1,44 @@
+suite: test redis statefulset
+templates:
+  - redis-statefulset.yaml
+release:
+  name: test
+values:
+  - ../test-values.yaml
+tests:
+  - it: should be a StatefulSet
+    asserts:
+      - isKind:
+          of: StatefulSet
+      - equal:
+          path: metadata.name
+          value: test-redis
+  - it: should have the correct replica count
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 1
+  - it: should have the correct container image
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "redis:7-alpine"
+  - it: should have the correct container port
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 6379
+  - it: should have the correct resource requests and limits
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "50m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "64Mi"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "100m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: "128Mi"

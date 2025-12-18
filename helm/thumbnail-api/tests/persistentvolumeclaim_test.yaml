@@ -1,0 +1,25 @@
+suite: test persistent volume claim
+templates:
+  - persistentvolumeclaim.yaml
+release:
+  name: test
+values:
+  - ../test-values.yaml
+tests:
+  - it: should be a PersistentVolumeClaim
+    asserts:
+      - isKind:
+          of: PersistentVolumeClaim
+      - equal:
+          path: metadata.name
+          value: test-storage
+  - it: should have the correct access modes
+    asserts:
+      - equal:
+          path: spec.accessModes[0]
+          value: ReadWriteOnce
+  - it: should have the correct storage size
+    asserts:
+      - equal:
+          path: spec.resources.requests.storage
+          value: 2Gi # Changed to 2Gi from test-values.yaml

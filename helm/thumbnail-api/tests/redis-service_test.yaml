@@ -1,0 +1,28 @@
+suite: test redis service
+templates:
+  - redis-service.yaml
+release:
+  name: test
+values:
+  - ../test-values.yaml
+tests:
+  - it: should be a Service
+    asserts:
+      - isKind:
+          of: Service
+      - equal:
+          path: metadata.name
+          value: test-redis
+  - it: should be a ClusterIP service
+    asserts:
+      - equal:
+          path: spec.type
+          value: ClusterIP
+  - it: should have the correct port and target port
+    asserts:
+      - equal:
+          path: spec.ports[0].port
+          value: 6379
+      - equal:
+          path: spec.ports[0].targetPort
+          value: redis

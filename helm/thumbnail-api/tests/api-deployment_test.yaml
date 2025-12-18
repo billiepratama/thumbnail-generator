@@ -1,0 +1,49 @@
+suite: test api deployment
+templates:
+  - api-deployment.yaml
+release:
+  name: test
+values:
+  - ../test-values.yaml
+tests:
+  - it: should be a Deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: test-api
+  - it: should have the correct replica count
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2 # Changed to 2 from test-values.yaml
+  - it: should have the correct container image
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "thumbnail-api:latest"
+  - it: should have the correct container port
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].ports[0].containerPort
+          value: 8000
+  - it: should have the correct resource requests and limits
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "100m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "128Mi"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "250m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: "256Mi"
+  - it: should have debug log level
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].args[6]
+          value: "debug"

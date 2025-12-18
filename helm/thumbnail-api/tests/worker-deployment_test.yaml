@@ -1,0 +1,39 @@
+suite: test worker deployment
+templates:
+  - worker-deployment.yaml
+release:
+  name: test
+values:
+  - ../test-values.yaml
+tests:
+  - it: should be a Deployment
+    asserts:
+      - isKind:
+          of: Deployment
+      - equal:
+          path: metadata.name
+          value: test-worker
+  - it: should have the correct replica count
+    asserts:
+      - equal:
+          path: spec.replicas
+          value: 2 # Changed to 2 from test-values.yaml
+  - it: should have the correct container image
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].image
+          value: "thumbnail-worker:latest"
+  - it: should have the correct resource requests and limits
+    asserts:
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.cpu
+          value: "150m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.requests.memory
+          value: "256Mi"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.cpu
+          value: "500m"
+      - equal:
+          path: spec.template.spec.containers[0].resources.limits.memory
+          value: "512Mi"
